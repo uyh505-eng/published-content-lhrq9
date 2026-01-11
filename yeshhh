@@ -1,0 +1,1015 @@
+-- Language Selector Module
+local LanguageSelector = {}
+LanguageSelector.__index = LanguageSelector
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Translations for all languages
+local translations = {
+    English = {
+        notAvailable = " not available",
+        defaultedTo = "Defaulted to ",
+        manualSelect = "💡 You can manually select a different language",
+        resetQuestion = "🔄 Reset language preference?",
+        resetInfo = "This will reset for this instance",
+        yes = "Yes",
+        no = "No",
+        loading = "▄︻デ══━一💥 Loading ",
+        loadingInfo = "✨ This language will be saved for this instance"
+    },
+    Spanish = {
+        notAvailable = " no disponible",
+        defaultedTo = "Cambiado a ",
+        manualSelect = "💡 Puedes seleccionar manualmente otro idioma",
+        resetQuestion = "🔄 ¿Restablecer preferencia de idioma?",
+        resetInfo = "Esto se restablecerá para esta instancia",
+        yes = "Sí",
+        no = "No",
+        loading = "▄︻デ══━一💥 Cargando ",
+        loadingInfo = "✨ Este idioma se guardará para esta instancia"
+    },
+    Vietnamese = {
+        notAvailable = " không khả dụng",
+        defaultedTo = "Đã chuyển sang ",
+        manualSelect = "💡 Bạn có thể chọn ngôn ngữ khác thủ công",
+        resetQuestion = "🔄 Đặt lại tùy chọn ngôn ngữ?",
+        resetInfo = "Điều này sẽ đặt lại cho phiên bản này",
+        yes = "Có",
+        no = "Không",
+        loading = "▄︻デ══━一💥 Đang tải ",
+        loadingInfo = "✨ Ngôn ngữ này sẽ được lưu cho phiên bản này"
+    },
+    Filipino = {
+        notAvailable = " hindi available",
+        defaultedTo = "Pinalitan sa ",
+        manualSelect = "💡 Maaari kang pumili ng ibang wika nang manu-mano",
+        resetQuestion = "🔄 I-reset ang kagustuhan sa wika?",
+        resetInfo = "Ire-reset ito para sa instance na ito",
+        yes = "Oo",
+        no = "Hindi",
+        loading = "▄︻デ══━一💥 Naglo-load ",
+        loadingInfo = "✨ Ang wikang ito ay mai-save para sa instance na ito"
+    },
+    Thai = {
+        notAvailable = " ไม่พร้อมใช้งาน",
+        defaultedTo = "เปลี่ยนเป็น ",
+        manualSelect = "💡 คุณสามารถเลือกภาษาอื่นด้วยตนเองได้",
+        resetQuestion = "🔄 รีเซ็ตการตั้งค่าภาษา?",
+        resetInfo = "สิ่งนี้จะรีเซ็ตสำหรับอินสแตนซ์นี้",
+        yes = "ใช่",
+        no = "ไม่",
+        loading = "▄︻デ══━一💥 กำลังโหลด ",
+        loadingInfo = "✨ ภาษานี้จะถูกบันทึกสำหรับอินสแตนซ์นี้"
+    },
+    Russian = {
+        notAvailable = " недоступен",
+        defaultedTo = "Переключено на ",
+        manualSelect = "💡 Вы можете выбрать другой язык вручную",
+        resetQuestion = "🔄 Сбросить языковые настройки?",
+        resetInfo = "Это сбросит настройки для этого экземпляра",
+        yes = "Да",
+        no = "Нет",
+        loading = "▄︻デ══━一💥 Загрузка ",
+        loadingInfo = "✨ Этот язык будет сохранен для этого экземпляра"
+    },
+    Portuguese = {
+        notAvailable = " não disponível",
+        defaultedTo = "Mudado para ",
+        manualSelect = "💡 Você pode selecionar outro idioma manualmente",
+        resetQuestion = "🔄 Redefinir preferência de idioma?",
+        resetInfo = "Isso redefinirá para esta instância",
+        yes = "Sim",
+        no = "Não",
+        loading = "▄︻デ══━一💥 Carregando ",
+        loadingInfo = "✨ Este idioma será salvo para esta instância"
+    },
+    German = {
+        notAvailable = " nicht verfügbar",
+        defaultedTo = "Gewechselt zu ",
+        manualSelect = "💡 Sie können manuell eine andere Sprache auswählen",
+        resetQuestion = "🔄 Spracheinstellung zurücksetzen?",
+        resetInfo = "Dies wird für diese Instanz zurückgesetzt",
+        yes = "Ja",
+        no = "Nein",
+        loading = "▄︻デ══━一💥 Lädt ",
+        loadingInfo = "✨ Diese Sprache wird für diese Instanz gespeichert"
+    },
+    Korean = {
+        notAvailable = " 사용할 수 없음",
+        defaultedTo = "다음으로 변경됨: ",
+        manualSelect = "💡 수동으로 다른 언어를 선택할 수 있습니다",
+        resetQuestion = "🔄 언어 설정을 재설정하시겠습니까?",
+        resetInfo = "이 인스턴스에 대해 재설정됩니다",
+        yes = "예",
+        no = "아니요",
+        loading = "▄︻デ══━一💥 로딩 중 ",
+        loadingInfo = "✨ 이 언어는 이 인스턴스에 저장됩니다"
+    },
+    ["Chinese (Simplified)"] = {
+        notAvailable = " 不可用",
+        defaultedTo = "已切换到 ",
+        manualSelect = "💡 您可以手动选择其他语言",
+        resetQuestion = "🔄 重置语言偏好？",
+        resetInfo = "这将重置此实例",
+        yes = "是",
+        no = "否",
+        loading = "▄︻デ══━一💥 加载中 ",
+        loadingInfo = "✨ 此语言将保存到此实例"
+    },
+    Japanese = {
+        notAvailable = " 利用できません",
+        defaultedTo = "切り替えました: ",
+        manualSelect = "💡 手動で別の言語を選択できます",
+        resetQuestion = "🔄 言語設定をリセットしますか？",
+        resetInfo = "このインスタンスでリセットされます",
+        yes = "はい",
+        no = "いいえ",
+        loading = "▄︻デ══━一💥 読み込み中 ",
+        loadingInfo = "✨ この言語はこのインスタンスに保存されます"
+    },
+    Arabic = {
+        notAvailable = " غير متوفر",
+        defaultedTo = "تم التبديل إلى ",
+        manualSelect = "💡 يمكنك اختيار لغة مختلفة يدويًا",
+        resetQuestion = "🔄 إعادة تعيين تفضيلات اللغة؟",
+        resetInfo = "سيتم إعادة التعيين لهذا المثيل",
+        yes = "نعم",
+        no = "لا",
+        loading = "▄︻デ══━一💥 جاري التحميل ",
+        loadingInfo = "✨ سيتم حفظ هذه اللغة لهذا المثيل"
+    },
+    Hindi = {
+        notAvailable = " उपलब्ध नहीं",
+        defaultedTo = "बदल दिया गया: ",
+        manualSelect = "💡 आप मैन्युअल रूप से एक अलग भाषा चुन सकते हैं",
+        resetQuestion = "🔄 भाषा प्राथमिकता रीसेट करें?",
+        resetInfo = "यह इस इंस्टेंस के लिए रीसेट होगा",
+        yes = "हाँ",
+        no = "नहीं",
+        loading = "▄︻デ══━一💥 लोड हो रहा है ",
+        loadingInfo = "✨ यह भाषा इस इंस्टेंस के लिए सहेजी जाएगी"
+    },
+    French = {
+        notAvailable = " non disponible",
+        defaultedTo = "Changé vers ",
+        manualSelect = "💡 Vous pouvez sélectionner manuellement une autre langue",
+        resetQuestion = "🔄 Réinitialiser la préférence de langue ?",
+        resetInfo = "Cela réinitialisera pour cette instance",
+        yes = "Oui",
+        no = "Non",
+        loading = "▄︻デ══━一💥 Chargement ",
+        loadingInfo = "✨ Cette langue sera sauvegardée pour cette instance"
+    },
+    Italian = {
+        notAvailable = " non disponibile",
+        defaultedTo = "Cambiato in ",
+        manualSelect = "💡 Puoi selezionare manualmente un'altra lingua",
+        resetQuestion = "🔄 Ripristinare la preferenza della lingua?",
+        resetInfo = "Questo verrà ripristinato per questa istanza",
+        yes = "Sì",
+        no = "No",
+        loading = "▄︻デ══━一💥 Caricamento ",
+        loadingInfo = "✨ Questa lingua verrà salvata per questa istanza"
+    }
+}
+
+function LanguageSelector.new()
+    local self = setmetatable({}, LanguageSelector)
+    
+    self.scripts = {}
+    self.activeNotifications = {}
+    self.autoSaveEnabled = true
+    self.savedLanguage = nil
+    self.currentScale = 1
+    self.resetNotificationShown = false
+    self.SCRIPT_ID = nil
+    self.SAVE_KEY = nil
+    self.screenGui = nil
+    self.strokeConnection = nil
+    
+    return self
+end
+
+function LanguageSelector:getGuiParent()
+    local success, coreGui = pcall(function()
+        return game:GetService("CoreGui")
+    end)
+    if success then
+        return coreGui
+    else
+        return playerGui
+    end
+end
+
+function LanguageSelector:generateScriptsHash()
+    local hashString = ""
+    local sortedKeys = {}
+    for key in pairs(self.scripts) do
+        table.insert(sortedKeys, key)
+    end
+    table.sort(sortedKeys)
+    
+    for _, key in ipairs(sortedKeys) do
+        local scriptId = self.scripts[key]:match("/script/([^/]+)$")
+        if scriptId then
+            hashString = hashString .. scriptId
+        end
+    end
+    
+    local hash = 0
+    for i = 1, #hashString do
+        hash = (hash * 31 + string.byte(hashString, i)) % 1000000000
+    end
+    return tostring(hash)
+end
+
+function LanguageSelector:getNextNotificationYPosition()
+    local yPos = 20
+    for _, notif in ipairs(self.activeNotifications) do
+        if notif and notif.Parent then
+            yPos = yPos + notif.AbsoluteSize.Y + 10
+        end
+    end
+    return yPos
+end
+
+function LanguageSelector:updateNotificationPositions()
+    local currentY = 20
+    for i, notif in ipairs(self.activeNotifications) do
+        if notif and notif.Parent then
+            local targetPos = UDim2.new(1, -notif.AbsoluteSize.X - 20, 0, currentY)
+            TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = targetPos}):Play()
+            currentY = currentY + notif.AbsoluteSize.Y + 10
+        end
+    end
+end
+
+function LanguageSelector:removeNotification(notif)
+    for i, n in ipairs(self.activeNotifications) do
+        if n == notif then
+            table.remove(self.activeNotifications, i)
+            break
+        end
+    end
+    self:updateNotificationPositions()
+end
+
+function LanguageSelector:showLanguageUnavailableNotification(requestedLang, fallbackLang)
+    local lang = translations[fallbackLang] or translations.English
+    
+    local notificationGui = Instance.new("ScreenGui")
+    notificationGui.Name = "LanguageUnavailableGUI"
+    notificationGui.Parent = self:getGuiParent()
+    notificationGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    pcall(function()
+        notificationGui.IgnoreGuiInset = true
+    end)
+    
+    local notificationWidth = 340
+    local notificationHeight = 90
+    
+    local notificationFrame = Instance.new("Frame")
+    notificationFrame.Name = "NotificationFrame"
+    notificationFrame.Size = UDim2.new(0, notificationWidth, 0, notificationHeight)
+    notificationFrame.Position = UDim2.new(1, 20, 0, self:getNextNotificationYPosition())
+    notificationFrame.BackgroundColor3 = Color3.fromRGB(35, 30, 25)
+    notificationFrame.BackgroundTransparency = 0.05
+    notificationFrame.BorderSizePixel = 0
+    notificationFrame.Parent = notificationGui
+    
+    table.insert(self.activeNotifications, notificationFrame)
+    
+    local notificationCorner = Instance.new("UICorner")
+    notificationCorner.CornerRadius = UDim.new(0, 12)
+    notificationCorner.Parent = notificationFrame
+    
+    local notificationShadow = Instance.new("Frame")
+    notificationShadow.Name = "NotificationShadow"
+    notificationShadow.Size = UDim2.new(1, 20, 1, 20)
+    notificationShadow.Position = UDim2.new(0, -10, 0, -8)
+    notificationShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    notificationShadow.BackgroundTransparency = 0.7
+    notificationShadow.ZIndex = notificationFrame.ZIndex - 1
+    notificationShadow.BorderSizePixel = 0
+    notificationShadow.Parent = notificationFrame
+    
+    local shadowCorner = Instance.new("UICorner")
+    shadowCorner.CornerRadius = UDim.new(0, 16)
+    shadowCorner.Parent = notificationShadow
+    
+    local notificationGradient = Instance.new("UIGradient")
+    notificationGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 50, 30)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80, 60, 40)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 45, 30))
+    }
+    notificationGradient.Rotation = 45
+    notificationGradient.Parent = notificationFrame
+    
+    local notificationStroke = Instance.new("UIStroke")
+    notificationStroke.Color = Color3.fromRGB(255, 180, 100)
+    notificationStroke.Transparency = 0.3
+    notificationStroke.Thickness = 1.5
+    notificationStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    notificationStroke.Parent = notificationFrame
+    
+    local warningIcon = Instance.new("TextLabel")
+    warningIcon.Name = "WarningIcon"
+    warningIcon.Size = UDim2.new(0, 30, 0, 30)
+    warningIcon.Position = UDim2.new(0, 10, 0, 10)
+    warningIcon.BackgroundTransparency = 1
+    warningIcon.Text = "⚠️"
+    warningIcon.TextColor3 = Color3.fromRGB(255, 200, 100)
+    warningIcon.TextSize = 24
+    warningIcon.Font = Enum.Font.SourceSansBold
+    warningIcon.Parent = notificationFrame
+    
+    local messageText = Instance.new("TextLabel")
+    messageText.Name = "MessageText"
+    messageText.Size = UDim2.new(1, -50, 0, 28)
+    messageText.Position = UDim2.new(0, 45, 0, 8)
+    messageText.BackgroundTransparency = 1
+    messageText.Text = requestedLang .. lang.notAvailable
+    messageText.TextColor3 = Color3.fromRGB(255, 220, 180)
+    messageText.TextSize = 13
+    messageText.Font = Enum.Font.SourceSansBold
+    messageText.TextScaled = true
+    messageText.TextXAlignment = Enum.TextXAlignment.Left
+    messageText.Parent = notificationFrame
+    
+    local messageStroke = Instance.new("UIStroke")
+    messageStroke.Color = Color3.fromRGB(255, 200, 150)
+    messageStroke.Thickness = 0.8
+    messageStroke.Transparency = 0.5
+    messageStroke.Parent = messageText
+    
+    local infoText = Instance.new("TextLabel")
+    infoText.Name = "InfoText"
+    infoText.Size = UDim2.new(1, -50, 0, 20)
+    infoText.Position = UDim2.new(0, 45, 0, 38)
+    infoText.BackgroundTransparency = 1
+    infoText.Text = lang.defaultedTo .. fallbackLang
+    infoText.TextColor3 = Color3.fromRGB(200, 180, 140)
+    infoText.TextSize = 10
+    infoText.Font = Enum.Font.SourceSansItalic
+    infoText.TextScaled = true
+    infoText.TextXAlignment = Enum.TextXAlignment.Left
+    infoText.Parent = notificationFrame
+    
+    local actionText = Instance.new("TextLabel")
+    actionText.Name = "ActionText"
+    actionText.Size = UDim2.new(1, -20, 0, 18)
+    actionText.Position = UDim2.new(0, 10, 1, -26)
+    actionText.BackgroundTransparency = 1
+    actionText.Text = lang.manualSelect
+    actionText.TextColor3 = Color3.fromRGB(150, 200, 255)
+    actionText.TextSize = 9
+    actionText.Font = Enum.Font.SourceSans
+    actionText.TextScaled = true
+    actionText.Parent = notificationFrame
+    
+    local timerBar = Instance.new("Frame")
+    timerBar.Name = "TimerBar"
+    timerBar.Size = UDim2.new(1, 0, 0, 2)
+    timerBar.Position = UDim2.new(0, 0, 1, -2)
+    timerBar.BackgroundColor3 = Color3.fromRGB(255, 180, 100)
+    timerBar.BorderSizePixel = 0
+    timerBar.Parent = notificationFrame
+    
+    local timerCorner = Instance.new("UICorner")
+    timerCorner.CornerRadius = UDim.new(0, 1)
+    timerCorner.Parent = timerBar
+    
+    local slideInTween = TweenService:Create(notificationFrame,
+        TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        {Position = UDim2.new(1, -notificationWidth - 20, 0, notificationFrame.Position.Y.Offset)}
+    )
+    slideInTween:Play()
+    
+    local timerTween = TweenService:Create(timerBar,
+        TweenInfo.new(7, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0, 0, 0, 2)}
+    )
+    timerTween:Play()
+    
+    local function closeNotification()
+        local slideOutTween = TweenService:Create(notificationFrame,
+            TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+            {Position = UDim2.new(1, 20, 0, notificationFrame.Position.Y.Offset)}
+        )
+        slideOutTween:Play()
+        
+        slideOutTween.Completed:Connect(function()
+            self:removeNotification(notificationFrame)
+            notificationGui:Destroy()
+        end)
+    end
+    
+    timerTween.Completed:Connect(function()
+        closeNotification()
+    end)
+    
+    notificationFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            closeNotification()
+        end
+    end)
+end
+
+function LanguageSelector:saveLanguage(language)
+    local data = {
+        language = language,
+        timestamp = os.time(),
+        gameId = game.GameId,
+        scriptId = self.SCRIPT_ID
+    }
+    writefile(self.SAVE_KEY .. ".json", HttpService:JSONEncode(data))
+    
+    _G["SelectedLanguage_" .. self.SCRIPT_ID] = language
+    _G["LanguagePreference_" .. self.SCRIPT_ID] = language
+end
+
+function LanguageSelector:loadLanguage()
+    if isfile(self.SAVE_KEY .. ".json") then
+        local success, data = pcall(function()
+            return HttpService:JSONDecode(readfile(self.SAVE_KEY .. ".json"))
+        end)
+        if success and data and data.language then
+            if self.scripts[data.language] then
+                _G["SelectedLanguage_" .. self.SCRIPT_ID] = data.language
+                _G["LanguagePreference_" .. self.SCRIPT_ID] = data.language
+                return data.language
+            else
+                local fallbackLang = "English"
+                _G["SelectedLanguage_" .. self.SCRIPT_ID] = fallbackLang
+                _G["LanguagePreference_" .. self.SCRIPT_ID] = fallbackLang
+                
+                spawn(function()
+                    wait(0.5)
+                    self:showLanguageUnavailableNotification(data.language, fallbackLang)
+                end)
+                
+                return fallbackLang
+            end
+        end
+    end
+    return nil
+end
+
+function LanguageSelector:showResetNotification()
+    if self.resetNotificationShown then
+        return
+    end
+    self.resetNotificationShown = true
+    
+    local lang = translations[self.savedLanguage] or translations.English
+    
+    local notificationGui = Instance.new("ScreenGui")
+    notificationGui.Name = "ResetNotificationGUI"
+    notificationGui.Parent = self:getGuiParent()
+    notificationGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    pcall(function()
+        notificationGui.IgnoreGuiInset = true
+    end)
+    
+    local notificationWidth = 320
+    local notificationHeight = 100
+    
+    local notificationFrame = Instance.new("Frame")
+    notificationFrame.Name = "NotificationFrame"
+    notificationFrame.Size = UDim2.new(0, notificationWidth, 0, notificationHeight)
+    notificationFrame.Position = UDim2.new(1, 20, 0, self:getNextNotificationYPosition())
+    notificationFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 35)
+    notificationFrame.BackgroundTransparency = 0.05
+    notificationFrame.BorderSizePixel = 0
+    notificationFrame.Parent = notificationGui
+    
+    table.insert(self.activeNotifications, notificationFrame)
+    
+    local notificationCorner = Instance.new("UICorner")
+    notificationCorner.CornerRadius = UDim.new(0, 12)
+    notificationCorner.Parent = notificationFrame
+    
+    local notificationShadow = Instance.new("Frame")
+    notificationShadow.Name = "NotificationShadow"
+    notificationShadow.Size = UDim2.new(1, 20, 1, 20)
+    notificationShadow.Position = UDim2.new(0, -10, 0, -8)
+    notificationShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    notificationShadow.BackgroundTransparency = 0.7
+    notificationShadow.ZIndex = notificationFrame.ZIndex - 1
+    notificationShadow.BorderSizePixel = 0
+    notificationShadow.Parent = notificationFrame
+    
+    local shadowCorner = Instance.new("UICorner")
+    shadowCorner.CornerRadius = UDim.new(0, 16)
+    shadowCorner.Parent = notificationShadow
+    
+    local notificationGradient = Instance.new("UIGradient")
+    notificationGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 50, 70)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(50, 40, 80)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 60, 90))
+    }
+    notificationGradient.Rotation = 45
+    notificationGradient.Parent = notificationFrame
+    
+    local notificationStroke = Instance.new("UIStroke")
+    notificationStroke.Color = Color3.fromRGB(120, 140, 255)
+    notificationStroke.Transparency = 0.3
+    notificationStroke.Thickness = 1.5
+    notificationStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    notificationStroke.Parent = notificationFrame
+    
+    local questionText = Instance.new("TextLabel")
+    questionText.Name = "QuestionText"
+    questionText.Size = UDim2.new(1, -20, 0, 35)
+    questionText.Position = UDim2.new(0, 10, 0, 8)
+    questionText.BackgroundTransparency = 1
+    questionText.Text = lang.resetQuestion
+    questionText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    questionText.TextSize = 13
+    questionText.Font = Enum.Font.SourceSansBold
+    questionText.TextScaled = true
+    questionText.Parent = notificationFrame
+    
+    local questionStroke = Instance.new("UIStroke")
+    questionStroke.Color = Color3.fromRGB(180, 200, 255)
+    questionStroke.Thickness = 0.8
+    questionStroke.Transparency = 0.4
+    questionStroke.Parent = questionText
+    
+    local infoText = Instance.new("TextLabel")
+    infoText.Name = "InfoText"
+    infoText.Size = UDim2.new(1, -20, 0, 20)
+    infoText.Position = UDim2.new(0, 10, 0, 40)
+    infoText.BackgroundTransparency = 1
+    infoText.Text = lang.resetInfo
+    infoText.TextColor3 = Color3.fromRGB(180, 200, 255)
+    infoText.TextSize = 9
+    infoText.Font = Enum.Font.SourceSansItalic
+    infoText.TextScaled = true
+    infoText.Parent = notificationFrame
+    
+    local buttonFrame = Instance.new("Frame")
+    buttonFrame.Name = "ButtonFrame"
+    buttonFrame.Size = UDim2.new(1, -20, 0, 28)
+    buttonFrame.Position = UDim2.new(0, 10, 1, -36)
+    buttonFrame.BackgroundTransparency = 1
+    buttonFrame.Parent = notificationFrame
+    
+    local yesButton = Instance.new("TextButton")
+    yesButton.Name = "YesButton"
+    yesButton.Size = UDim2.new(0, 70, 1, 0)
+    yesButton.Position = UDim2.new(0, 0, 0, 0)
+    yesButton.BackgroundColor3 = Color3.fromRGB(100, 220, 120)
+    yesButton.BackgroundTransparency = 0.1
+    yesButton.BorderSizePixel = 0
+    yesButton.Text = lang.yes
+    yesButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    yesButton.TextSize = 11
+    yesButton.Font = Enum.Font.SourceSansBold
+    yesButton.Parent = buttonFrame
+    
+    local yesCorner = Instance.new("UICorner")
+    yesCorner.CornerRadius = UDim.new(0, 8)
+    yesCorner.Parent = yesButton
+    
+    local yesStroke = Instance.new("UIStroke")
+    yesStroke.Color = Color3.fromRGB(140, 240, 160)
+    yesStroke.Thickness = 1
+    yesStroke.Transparency = 0.3
+    yesStroke.Parent = yesButton
+    
+    local noButton = Instance.new("TextButton")
+    noButton.Name = "NoButton"
+    noButton.Size = UDim2.new(0, 70, 1, 0)
+    noButton.Position = UDim2.new(0, 80, 0, 0)
+    noButton.BackgroundColor3 = Color3.fromRGB(255, 100, 120)
+    noButton.BackgroundTransparency = 0.1
+    noButton.BorderSizePixel = 0
+    noButton.Text = lang.no
+    noButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    noButton.TextSize = 11
+    noButton.Font = Enum.Font.SourceSansBold
+    noButton.Parent = buttonFrame
+    
+    local noCorner = Instance.new("UICorner")
+    noCorner.CornerRadius = UDim.new(0, 8)
+    noCorner.Parent = noButton
+    
+    local noStroke = Instance.new("UIStroke")
+    noStroke.Color = Color3.fromRGB(255, 140, 160)
+    noStroke.Thickness = 1
+    noStroke.Transparency = 0.3
+    noStroke.Parent = noButton
+    
+    local timerBar = Instance.new("Frame")
+    timerBar.Name = "TimerBar"
+    timerBar.Size = UDim2.new(1, 0, 0, 2)
+    timerBar.Position = UDim2.new(0, 0, 1, -2)
+    timerBar.BackgroundColor3 = Color3.fromRGB(120, 200, 255)
+    timerBar.BorderSizePixel = 0
+    timerBar.Parent = notificationFrame
+    
+    local timerCorner = Instance.new("UICorner")
+    timerCorner.CornerRadius = UDim.new(0, 1)
+    timerCorner.Parent = timerBar
+    
+    local slideInTween = TweenService:Create(notificationFrame,
+        TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        {Position = UDim2.new(1, -notificationWidth - 20, 0, notificationFrame.Position.Y.Offset)}
+    )
+    slideInTween:Play()
+    
+    local timerTween = TweenService:Create(timerBar,
+        TweenInfo.new(5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0, 0, 0, 2)}
+    )
+    timerTween:Play()
+    
+    local function closeNotification()
+        local slideOutTween = TweenService:Create(notificationFrame,
+            TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+            {Position = UDim2.new(1, 20, 0, notificationFrame.Position.Y.Offset)}
+        )
+        slideOutTween:Play()
+        
+        slideOutTween.Completed:Connect(function()
+            self:removeNotification(notificationFrame)
+            notificationGui:Destroy()
+        end)
+    end
+    
+    yesButton.MouseEnter:Connect(function()
+        TweenService:Create(yesButton, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05}):Play()
+    end)
+    
+    yesButton.MouseLeave:Connect(function()
+        TweenService:Create(yesButton, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.1}):Play()
+    end)
+    
+    noButton.MouseEnter:Connect(function()
+        TweenService:Create(noButton, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05}):Play()
+    end)
+    
+    noButton.MouseLeave:Connect(function()
+        TweenService:Create(noButton, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.1}):Play()
+    end)
+    
+    yesButton.MouseButton1Click:Connect(function()
+        self.savedLanguage = nil
+        _G["SelectedLanguage_" .. self.SCRIPT_ID] = nil
+        _G["LanguagePreference_" .. self.SCRIPT_ID] = nil
+        if isfile(self.SAVE_KEY .. ".json") then
+            delfile(self.SAVE_KEY .. ".json")
+        end
+        closeNotification()
+    end)
+    
+    noButton.MouseButton1Click:Connect(function()
+        closeNotification()
+    end)
+    
+    timerTween.Completed:Connect(function()
+        closeNotification()
+    end)
+end
+
+function LanguageSelector:Init(scripts)
+    self.scripts = scripts
+    self.SCRIPT_ID = self:generateScriptsHash()
+    self.SAVE_KEY = "LanguageSelector_" .. game.GameId .. "_" .. self.SCRIPT_ID .. "_SavedSettings"
+    
+    local lang = self:loadLanguage()
+    if self.autoSaveEnabled and lang and self.scripts[lang] then
+        self.savedLanguage = lang
+        _G["SelectedLanguage_" .. self.SCRIPT_ID] = lang
+        _G["LanguagePreference_" .. self.SCRIPT_ID] = lang
+        
+        self:showResetNotification()
+        
+        spawn(function()
+            wait(0.1)
+            pcall(function()
+                loadstring(game:HttpGet(self.scripts[self.savedLanguage]))()
+            end)
+        end)
+        return true
+    end
+    return false
+end
+
+function LanguageSelector:CreateGUI()
+    self.screenGui = Instance.new("ScreenGui")
+    self.screenGui.Name = "LanguageSelectorGUI"
+    self.screenGui.Parent = self:getGuiParent()
+    self.screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    pcall(function()
+        self.screenGui.IgnoreGuiInset = true
+    end)
+    
+    local frameWidth = 280
+    local frameHeight = 400
+    
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, frameWidth, 0, frameHeight)
+    mainFrame.Position = UDim2.new(0.5, -frameWidth/2, 0.5, -frameHeight/2)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+    mainFrame.BackgroundTransparency = 0.02
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Parent = self.screenGui
+    
+    local mainCorner = Instance.new("UICorner")
+    mainCorner.CornerRadius = UDim.new(0, 18)
+    mainCorner.Parent = mainFrame
+    
+    local shadowFrame = Instance.new("Frame")
+    shadowFrame.Name = "ShadowFrame"
+    shadowFrame.Size = UDim2.new(1, 40, 1, 40)
+    shadowFrame.Position = UDim2.new(0, -20, 0, -15)
+    shadowFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    shadowFrame.BackgroundTransparency = 0.7
+    shadowFrame.ZIndex = mainFrame.ZIndex - 1
+    shadowFrame.BorderSizePixel = 0
+    shadowFrame.Parent = mainFrame
+    
+    local shadowCorner = Instance.new("UICorner")
+    shadowCorner.CornerRadius = UDim.new(0, 23)
+    shadowCorner.Parent = shadowFrame
+    
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 30, 90)),
+        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(30, 45, 80)),
+        ColorSequenceKeypoint.new(0.7, Color3.fromRGB(45, 30, 85)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 60, 95))
+    }
+    gradient.Rotation = 135
+    gradient.Parent = mainFrame
+    
+    local innerStroke = Instance.new("UIStroke")
+    innerStroke.Color = Color3.fromRGB(120, 140, 255)
+    innerStroke.Transparency = 0.2
+    innerStroke.Thickness = 2
+    innerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    innerStroke.Parent = mainFrame
+    
+    local strokeGradient = Instance.new("UIGradient")
+    strokeGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 200)),
+        ColorSequenceKeypoint.new(0.2, Color3.fromRGB(100, 200, 255)),
+        ColorSequenceKeypoint.new(0.4, Color3.fromRGB(200, 255, 100)),
+        ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 200, 100)),
+        ColorSequenceKeypoint.new(0.8, Color3.fromRGB(150, 100, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 100, 200))
+    }
+    strokeGradient.Parent = innerStroke
+    
+    local time = 0
+    self.strokeConnection = RunService.Heartbeat:Connect(function(dt)
+        time = time + dt
+        strokeGradient.Rotation = (time * 60) % 360
+        innerStroke.Transparency = 0.2 + math.sin(time * 3) * 0.1
+    end)
+    
+    -- Dragging functionality
+    local dragToggle, dragStart, startPos
+    mainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragToggle = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragToggle = false
+                end
+            end)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragToggle then
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    
+    local title = Instance.new("TextLabel")
+    title.Name = "Title"
+    title.Size = UDim2.new(1, -60, 0, 30)
+    title.Position = UDim2.new(0, 15, 0, 10)
+    title.BackgroundTransparency = 1
+    title.Text = "🌍 SELECT LANGUAGE"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 16
+    title.Font = Enum.Font.SourceSansBold
+    title.TextScaled = true
+    title.Parent = mainFrame
+    
+    local titleStroke = Instance.new("UIStroke")
+    titleStroke.Color = Color3.fromRGB(120, 200, 255)
+    titleStroke.Thickness = 1
+    titleStroke.Transparency = 0.5
+    titleStroke.Parent = title
+    
+    local subtitle = Instance.new("TextLabel")
+    subtitle.Name = "Subtitle"
+    subtitle.Size = UDim2.new(1, -30, 0, 18)
+    subtitle.Position = UDim2.new(0, 15, 0, 42)
+    subtitle.BackgroundTransparency = 1
+    subtitle.Text = "Saved per instance • Drag to move"
+    subtitle.TextColor3 = Color3.fromRGB(180, 200, 255)
+    subtitle.TextSize = 9
+    subtitle.Font = Enum.Font.SourceSansItalic
+    subtitle.TextScaled = true
+    subtitle.Parent = mainFrame
+    
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 25, 0, 25)
+    closeButton.Position = UDim2.new(1, -32, 0, 8)
+    closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 80)
+    closeButton.BackgroundTransparency = 0.1
+    closeButton.BorderSizePixel = 0
+    closeButton.Text = "✕"
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.TextSize = 12
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.Parent = mainFrame
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 12)
+    closeCorner.Parent = closeButton
+    
+    local closeStroke = Instance.new("UIStroke")
+    closeStroke.Color = Color3.fromRGB(255, 100, 120)
+    closeStroke.Thickness = 1
+    closeStroke.Transparency = 0.3
+    closeStroke.Parent = closeButton
+    
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Name = "LanguageScroll"
+    scrollFrame.Size = UDim2.new(1, -30, 1, -80)
+    scrollFrame.Position = UDim2.new(0, 15, 0, 70)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.BorderSizePixel = 0
+    scrollFrame.ScrollBarThickness = 6
+    scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(150, 170, 255)
+    scrollFrame.ScrollBarImageTransparency = 0.2
+    scrollFrame.Parent = mainFrame
+    
+    local gridLayout = Instance.new("UIGridLayout")
+    gridLayout.CellSize = UDim2.new(0, 240, 0, 40)
+    gridLayout.CellPadding = UDim2.new(0, 8, 0, 8)
+    gridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    gridLayout.SortOrder = Enum.SortOrder.Name
+    gridLayout.Parent = scrollFrame
+    
+    -- Create language buttons
+    for languageName, scriptUrl in pairs(self.scripts) do
+        self:createLanguageButton(scrollFrame, gridLayout, mainFrame, languageName, scriptUrl)
+    end
+    
+    local function updateCanvasSize()
+        local contentSize = gridLayout.AbsoluteContentSize
+        scrollFrame.CanvasSize = UDim2.new(0, contentSize.X, 0, contentSize.Y + 20)
+    end
+    
+    gridLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+    updateCanvasSize()
+    
+    mainFrame.Position = UDim2.new(0.5, -frameWidth/2, 1.2, 0)
+    local entranceTween = TweenService:Create(mainFrame,
+        TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        {Position = UDim2.new(0.5, -frameWidth/2, 0.5, -frameHeight/2)}
+    )
+    entranceTween:Play()
+    
+    closeButton.MouseButton1Click:Connect(function()
+        local exitTween = TweenService:Create(mainFrame,
+            TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+            {Position = UDim2.new(0.5, -frameWidth/2, 1.2, 0)}
+        )
+        exitTween:Play()
+        
+        exitTween.Completed:Connect(function()
+            if self.strokeConnection then
+                self.strokeConnection:Disconnect()
+            end
+            self.screenGui:Destroy()
+        end)
+    end)
+end
+
+function LanguageSelector:createLanguageButton(scrollFrame, gridLayout, mainFrame, languageName, scriptUrl)
+    local button = Instance.new("TextButton")
+    button.Name = languageName
+    button.Size = gridLayout.CellSize
+    button.BackgroundColor3 = Color3.fromRGB(45, 45, 70)
+    button.BackgroundTransparency = (self.savedLanguage == languageName) and 0.2 or 0.6
+    button.BorderSizePixel = 0
+    button.Text = languageName
+    button.TextColor3 = (self.savedLanguage == languageName) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(220, 220, 255)
+    button.TextSize = 14
+    button.Font = Enum.Font.SourceSansBold
+    button.TextScaled = true
+    button.Parent = scrollFrame
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 10)
+    buttonCorner.Parent = button
+    
+    local buttonStroke = Instance.new("UIStroke")
+    buttonStroke.Color = (self.savedLanguage == languageName) and Color3.fromRGB(120, 200, 255) or Color3.fromRGB(100, 120, 200)
+    buttonStroke.Transparency = (self.savedLanguage == languageName) and 0.2 or 0.5
+    buttonStroke.Thickness = (self.savedLanguage == languageName) and 2 or 1
+    buttonStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    buttonStroke.Parent = button
+    
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.1, TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        TweenService:Create(buttonStroke, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Transparency = 0.05, Thickness = 3, Color = Color3.fromRGB(180, 240, 255)}):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            BackgroundTransparency = (self.savedLanguage == languageName) and 0.2 or 0.6,
+            TextColor3 = (self.savedLanguage == languageName) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(220, 220, 255)
+        }):Play()
+        TweenService:Create(buttonStroke, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Transparency = (self.savedLanguage == languageName) and 0.2 or 0.5,
+            Thickness = (self.savedLanguage == languageName) and 2 or 1,
+            Color = (self.savedLanguage == languageName) and Color3.fromRGB(120, 200, 255) or Color3.fromRGB(100, 120, 200)
+        }):Play()
+    end)
+    
+    button.MouseButton1Click:Connect(function()
+        self.savedLanguage = languageName
+        self:saveLanguage(languageName)
+        
+        local lang = translations[languageName] or translations.English
+        
+        local loadingFrame = Instance.new("Frame")
+        loadingFrame.Name = "LoadingFrame"
+        loadingFrame.Size = UDim2.new(1, 0, 1, 0)
+        loadingFrame.Position = UDim2.new(0, 0, 0, 0)
+        loadingFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        loadingFrame.BackgroundTransparency = 0.1
+        loadingFrame.Parent = mainFrame
+        
+        local loadingCorner = Instance.new("UICorner")
+        loadingCorner.CornerRadius = UDim.new(0, 18)
+        loadingCorner.Parent = loadingFrame
+        
+        local loadingText = Instance.new("TextLabel")
+        loadingText.Size = UDim2.new(1, -30, 0, 40)
+        loadingText.Position = UDim2.new(0, 15, 0.4, -20)
+        loadingText.BackgroundTransparency = 1
+        loadingText.Text = lang.loading .. languageName .. "..."
+        loadingText.TextColor3 = Color3.fromRGB(255, 255, 255)
+        loadingText.TextSize = 15
+        loadingText.Font = Enum.Font.SourceSansBold
+        loadingText.TextScaled = true
+        loadingText.Parent = loadingFrame
+        
+        local infoText = Instance.new("TextLabel")
+        infoText.Size = UDim2.new(1, -30, 0, 25)
+        infoText.Position = UDim2.new(0, 15, 0.55, 0)
+        infoText.BackgroundTransparency = 1
+        infoText.Text = lang.loadingInfo
+        infoText.TextColor3 = Color3.fromRGB(180, 200, 255)
+        infoText.TextSize = 10
+        infoText.Font = Enum.Font.SourceSansItalic
+        infoText.TextScaled = true
+        infoText.Parent = loadingFrame
+        
+        spawn(function()
+            wait(0.6)
+            pcall(function()
+                loadstring(game:HttpGet(scriptUrl))()
+            end)
+            
+            if self.strokeConnection then
+                self.strokeConnection:Disconnect()
+            end
+            self.screenGui:Destroy()
+            
+            wait(0.5)
+            self:showResetNotification()
+        end)
+    end)
+end
+
+return LanguageSelector
+
